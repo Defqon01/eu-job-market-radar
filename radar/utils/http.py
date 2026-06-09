@@ -79,9 +79,17 @@ def _can_fetch(url: str) -> bool:
     return parser.can_fetch(config.USER_AGENT, url)
 
 
-def get(url: str, *, check_robots: bool = False) -> requests.Response | None:
+def get(
+    url: str,
+    *,
+    check_robots: bool = False,
+    extra_headers: dict | None = None,
+) -> requests.Response | None:
     """
     Perform a polite GET request.
+
+    extra_headers, if given, are merged on top of the default User-Agent header
+    (useful for APIs that require a key header).
 
     Returns the Response on success, or None on any failure (network error,
     disallowed by robots.txt, non-200 status). Never raises.
@@ -94,10 +102,14 @@ def get(url: str, *, check_robots: bool = False) -> requests.Response | None:
 
     _respect_rate_limit(host)
 
+    headers = {"User-Agent": config.USER_AGENT}
+    if extra_headers:
+        headers.update(extra_headers)
+
     try:
         resp = requests.get(
             url,
-            headers={"User-Agent": config.USER_AGENT},
+            headers=headers,
             timeout=config.REQUEST_TIMEOUT_SECONDS,
         )
         resp.raise_for_status()

@@ -30,8 +30,13 @@ from radar.collectors import (
     company_news_collector,
     eures_collector,
     eurofound_collector,
-    jobboard_collector,
+    finland_jobs,
+    france_jobs,
+    germany_jobs,
+    netherlands_jobs,
     rss_collector,
+    spain_jobs,
+    sweden_jobs,
 )
 from radar.models import Item
 from radar.processing import dedupe
@@ -45,7 +50,12 @@ logger = get_logger("main")
 COLLECTORS = [
     ("RSS / Google News", rss_collector.collect),
     ("Company news", company_news_collector.collect),
-    ("Job boards (Arbetsförmedlingen)", jobboard_collector.collect),
+    ("Sweden jobs", sweden_jobs.collect),
+    ("Germany jobs", germany_jobs.collect),
+    ("France jobs", france_jobs.collect),
+    ("Netherlands jobs", netherlands_jobs.collect),
+    ("Finland jobs", finland_jobs.collect),
+    ("Spain jobs", spain_jobs.collect),
     ("Eurofound ERM", eurofound_collector.collect),
     ("EURES", eures_collector.collect),
 ]

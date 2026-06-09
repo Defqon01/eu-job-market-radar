@@ -122,17 +122,17 @@ EUROFOUND_ERM_URL = "https://www.eurofound.europa.eu/en/restructuring/erm"
 EURES_URL = "https://eures.europa.eu/index_en"
 
 # ---------------------------------------------------------------------------
-# Arbetsförmedlingen (Swedish Public Employment Service) — JobTech open API.
-# This is an OFFICIAL, public, no-auth JSON API for live Swedish job ads:
-#   https://jobsearch.api.jobtechdev.se/   (docs: https://jobtechdev.se/)
-# It is the polite, sanctioned alternative to scraping a job board.
+# Country job-board collectors.
 #
-# We run a small set of searches relevant to this radar (AI, data, HR, etc.)
-# and keep only a handful of the newest ads per query so we don't flood the
-# database with thousands of vacancies each week.
+# Each country has its own collector file in radar/collectors/. They all use
+# the SAME English search terms below, so coverage stays consistent and easy
+# to tune in one place. Job titles returned by national APIs are in the local
+# language (we do not translate them), but everything we control is in English.
+#
+# Keep the limit modest so a weekly run does not flood the database with
+# thousands of vacancies.
 # ---------------------------------------------------------------------------
-ARBETSFORMEDLINGEN_API = "https://jobsearch.api.jobtechdev.se/search"
-ARBETSFORMEDLINGEN_QUERIES = [
+JOB_SEARCH_TERMS = [
     "AI",
     "machine learning",
     "data scientist",
@@ -142,8 +142,33 @@ ARBETSFORMEDLINGEN_QUERIES = [
     "people analytics",
     "talent acquisition",
 ]
-# Max ads to keep per query (newest first). Keep modest for a weekly digest.
-ARBETSFORMEDLINGEN_LIMIT_PER_QUERY = 15
+JOB_BOARD_LIMIT_PER_QUERY = 15
+
+# --- Sweden: Arbetsförmedlingen JobTech API (public, no key required) ---
+#   docs: https://jobtechdev.se/
+SWEDEN_JOBS_API = "https://jobsearch.api.jobtechdev.se/search"
+
+# --- Germany: Bundesagentur für Arbeit "Jobsuche" API (public app key) ---
+# The key below is the well-known public key used by their own web/app client;
+# no personal registration is required to read public vacancies.
+GERMANY_JOBS_API = (
+    "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs"
+)
+GERMANY_JOBS_API_KEY = "jobboerse-jobsuche"
+# Public vacancy detail pages are built from the ad's reference number:
+GERMANY_JOB_DETAIL_URL = "https://www.arbeitsagentur.de/jobsuche/jobdetail/{refnr}"
+
+# --- France: France Travail "Offres d'emploi" API (free, but OAuth required) ---
+# Create free credentials at https://francetravail.io/ and put them in your
+# .env / GitHub secrets. If they are missing, the collector skips safely.
+FRANCE_JOBS_TOKEN_URL = (
+    "https://entreprise.francetravail.fr/connexion/oauth2/access_token?realm=/partenaire"
+)
+FRANCE_JOBS_API = (
+    "https://api.francetravail.io/partenaire/offresdemploi/v2/offres/search"
+)
+FRANCE_TRAVAIL_CLIENT_ID = os.getenv("FRANCE_TRAVAIL_CLIENT_ID", "").strip()
+FRANCE_TRAVAIL_CLIENT_SECRET = os.getenv("FRANCE_TRAVAIL_CLIENT_SECRET", "").strip()
 
 # ---------------------------------------------------------------------------
 # Classification keywords (lower-cased matching).

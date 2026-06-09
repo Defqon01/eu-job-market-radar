@@ -17,6 +17,12 @@ Each run, the radar:
    - Google News RSS searches (layoffs, hiring freezes, skills shortages, AI jobs, etc.)
    - Optional direct RSS feeds you add
    - Company newsrooms (Ericsson, Spotify, SAP, Nokia, … — easy to extend)
+   - **National job boards (real vacancies)**, one collector per country:
+     - 🇸🇪 Sweden — Arbetsförmedlingen open API (works out of the box)
+     - 🇩🇪 Germany — Bundesagentur für Arbeit open API (works out of the box)
+     - 🇫🇷 France — France Travail API (optional; needs free credentials)
+     - 🇳🇱 Netherlands, 🇫🇮 Finland, 🇪🇸 Spain — safe placeholders with TODOs
+       (no clean free public API yet; return nothing, never crash)
    - Eurofound European Restructuring Monitor (best-effort, polite)
    - EURES (safe placeholder — see TODOs)
 2. **Stores** every item in a local **SQLite** database (`data/radar.sqlite`).
@@ -213,11 +219,31 @@ Everything lives in **`config.py`**:
 - **Direct RSS feeds** → add `(name, url)` tuples to `DIRECT_RSS_FEEDS`.
 - **Companies** → add `(company_name, rss_url_or_None)` to `COMPANY_FEEDS`.
   Use `None` if you don't have a feed yet — it will be skipped safely.
+- **Job-board search terms** → edit `JOB_SEARCH_TERMS` (used by every country
+  collector) and `JOB_BOARD_LIMIT_PER_QUERY`.
 - **Classification keywords** → edit `SIGNAL_KEYWORDS`.
 - **Countries** → edit `COUNTRY_KEYWORDS`.
 - **Keywords of interest** (for the report) → edit `EXTRA_KEYWORDS_OF_INTEREST`.
 
 No code changes needed for any of these — just edit the lists.
+
+### Country job-board collectors
+
+Each country has its own file in `radar/collectors/` (`sweden_jobs.py`,
+`germany_jobs.py`, `france_jobs.py`, `netherlands_jobs.py`, `finland_jobs.py`,
+`spain_jobs.py`). Sweden and Germany work with no setup. To enable France, add
+free credentials from https://francetravail.io/ to your `.env` / GitHub
+secrets:
+
+```
+FRANCE_TRAVAIL_CLIENT_ID=...
+FRANCE_TRAVAIL_CLIENT_SECRET=...
+```
+
+To add a new country, copy `sweden_jobs.py`, point it at that country's public
+API, set `country="..."`, and register it in the `COLLECTORS` list in `main.py`.
+The Netherlands/Finland/Spain files are placeholders with TODOs showing where
+to start.
 
 ---
 
