@@ -122,6 +122,30 @@ EUROFOUND_ERM_URL = "https://www.eurofound.europa.eu/en/restructuring/erm"
 EURES_URL = "https://eures.europa.eu/index_en"
 
 # ---------------------------------------------------------------------------
+# Arbetsförmedlingen (Swedish Public Employment Service) — JobTech open API.
+# This is an OFFICIAL, public, no-auth JSON API for live Swedish job ads:
+#   https://jobsearch.api.jobtechdev.se/   (docs: https://jobtechdev.se/)
+# It is the polite, sanctioned alternative to scraping a job board.
+#
+# We run a small set of searches relevant to this radar (AI, data, HR, etc.)
+# and keep only a handful of the newest ads per query so we don't flood the
+# database with thousands of vacancies each week.
+# ---------------------------------------------------------------------------
+ARBETSFORMEDLINGEN_API = "https://jobsearch.api.jobtechdev.se/search"
+ARBETSFORMEDLINGEN_QUERIES = [
+    "AI",
+    "machine learning",
+    "data scientist",
+    "data engineer",
+    "workforce planning",
+    "HR analytics",
+    "people analytics",
+    "talent acquisition",
+]
+# Max ads to keep per query (newest first). Keep modest for a weekly digest.
+ARBETSFORMEDLINGEN_LIMIT_PER_QUERY = 15
+
+# ---------------------------------------------------------------------------
 # Classification keywords (lower-cased matching).
 # Order matters: the classifier checks job_posting hints, then the categories
 # below in this dictionary order.

@@ -11,6 +11,8 @@ light HTML part, so it is readable in any mail client.
 
 from __future__ import annotations
 
+import html
+import re
 import smtplib
 from email.message import EmailMessage
 
@@ -19,27 +21,80 @@ from radar.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
+# Page styling kept inline so it renders the same in every mail client.
+_HTML_STYLE = """
+body { font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+       line-height: 1.5; color: #1a1a1a; max-width: 760px; margin: 0 auto; padding: 16px; }
+h1 { font-size: 22px; border-bottom: 2px solid #2d6cdf; padding-bottom: 6px; }
+h2 { font-size: 17px; margin-top: 28px; color: #2d6cdf; }
+ul { padding-left: 20px; } li { margin: 4px 0; }
+a { color: #2d6cdf; text-decoration: none; } a:hover { text-decoration: underline; }
+em { color: #666; } hr { border: none; border-top: 1px solid #ddd; margin: 16px 0; }
+"""
 
-def _markdown_to_basic_html(markdown_text: str) -> str:
-    """
-    Convert the markdown to extremely simple HTML.
 
-    We don't pull in a markdown library to keep dependencies light. We just
-    wrap the raw markdown in a <pre> block so structure is preserved. Mail
-    clients that prefer plain text will use the plain part anyway.
+def _inline_md(text: str) -> str:
+    """Apply inline markdown (links, bold, italic) to already-escaped text."""
+    # [label](url) -> <a href="url">label</a>
+    text = re.sub(
+        r"\[([^\]]+)\]\((https?://[^)\s]+)\)",
+        r'<a href="\2">\1</a>',
+        text,
+    )
+    # **bold** and _italic_
+    text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
+    text = re.sub(r"_([^_]+)_", r"<em>\1</em>", text)
+    return text
+
+
+def _markdown_to_html(markdown_text: str) -> str:
     """
-    escaped = (
-        markdown_text.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
-    return (
-        "<html><body>"
-        "<pre style=\"font-family: -apple-system, Segoe UI, sans-serif; "
-        "white-space: pre-wrap; line-height: 1.4;\">"
-        f"{escaped}"
-        "</pre></body></html>"
-    )
+    Convert our report markdown into clean HTML with real headings and
+    clickable links.
+
+    This is a small, purpose-built converter (no extra dependencies) that
+    handles exactly the markdown our report generator emits: h1/h2 headings,
+    bullet lists, horizontal rules, blank-line paragraphs, and inline
+    links/bold/italic.
+    """
+    out: list[str] = []
+    in_list = False
+
+    def close_list() -> None:
+        nonlocal in_list
+        if in_list:
+            out.append("</ul>")
+            in_list = False
+
+    for raw_line in markdown_text.splitlines():
+        line = raw_line.rstrip()
+        # Escape HTML-special chars first, then re-apply markdown as real tags.
+        safe = _inline_md(html.escape(line, quote=False))
+
+        if not line.strip():
+            close_list()
+            continue
+        if line.startswith("## "):
+            close_list()
+            out.append(f"<h2>{_inline_md(html.escape(line[3:], quote=False))}</h2>")
+        elif line.startswith("# "):
+            close_list()
+            out.append(f"<h1>{_inline_md(html.escape(line[2:], quote=False))}</h1>")
+        elif line.startswith("- "):
+            if not in_list:
+                out.append("<ul>")
+                in_list = True
+            out.append(f"<li>{_inline_md(html.escape(line[2:], quote=False))}</li>")
+        elif line.strip() == "---":
+            close_list()
+            out.append("<hr>")
+        else:
+            close_list()
+            out.append(f"<p>{safe}</p>")
+
+    close_list()
+    body = "\n".join(out)
+    return f"<html><head><style>{_HTML_STYLE}</style></head><body>{body}</body></html>"
 
 
 def send_report(report_markdown: str, report_date: str) -> bool:
@@ -68,7 +123,7 @@ def send_report(report_markdown: str, report_date: str) -> bool:
     # and the message gets re-encoded as 7-bit on the wire.
     msg.set_content(report_markdown, subtype="plain", charset="utf-8", cte="quoted-printable")
     msg.add_alternative(
-        _markdown_to_basic_html(report_markdown),
+        _markdown_to_html(report_markdown),
         subtype="html",
         charset="utf-8",
         cte="quoted-printable",

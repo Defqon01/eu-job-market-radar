@@ -77,6 +77,12 @@ def _format_item_line(item: dict) -> str:
 def generate_fallback_report(items: list[dict], days: int) -> str:
     """Build a markdown report using only counts and simple rules."""
     today = _today_str()
+
+    # Drop unclassified items: they are kept in the database but add noise to
+    # the report (Google News headlines often lack the keyword we match on).
+    all_count = len(items)
+    items = [i for i in items if i.get("signal_type") not in (None, "", "unknown")]
+    omitted = all_count - len(items)
     total = len(items)
 
     by_signal = _count_by(items, "signal_type")
@@ -91,9 +97,13 @@ def generate_fallback_report(items: list[dict], days: int) -> str:
     lines: list[str] = []
     lines.append(f"# EU Job Market Radar — {today}")
     lines.append("")
+    omitted_note = (
+        f" {omitted} unclassified item(s) omitted." if omitted else ""
+    )
     lines.append(
         f"_Automated weekly digest covering the last {days} days. "
-        f"{total} item(s) reviewed. Generated without an LLM (deterministic mode)._"
+        f"{total} classified item(s) shown.{omitted_note} "
+        f"Generated without an LLM (deterministic mode)._"
     )
     lines.append("")
 
@@ -254,6 +264,8 @@ def _hr_observations(
 def _build_llm_prompt(items: list[dict], days: int) -> str:
     """Compose a compact prompt with the collected items for the LLM."""
     today = _today_str()
+    # Send only classified items to the LLM — unclassified headlines are noise.
+    items = [i for i in items if i.get("signal_type") not in (None, "", "unknown")]
     lines = [
         f"You are an analyst writing the 'EU Job Market Radar' weekly report for {today}.",
         f"Below are {len(items)} items collected over the last {days} days.",

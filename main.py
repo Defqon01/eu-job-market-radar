@@ -30,6 +30,7 @@ from radar.collectors import (
     company_news_collector,
     eures_collector,
     eurofound_collector,
+    jobboard_collector,
     rss_collector,
 )
 from radar.models import Item
@@ -44,6 +45,7 @@ logger = get_logger("main")
 COLLECTORS = [
     ("RSS / Google News", rss_collector.collect),
     ("Company news", company_news_collector.collect),
+    ("Job boards (Arbetsförmedlingen)", jobboard_collector.collect),
     ("Eurofound ERM", eurofound_collector.collect),
     ("EURES", eures_collector.collect),
 ]
