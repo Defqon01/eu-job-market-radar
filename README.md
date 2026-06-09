@@ -22,9 +22,17 @@ Each run, the radar:
      - 🇩🇪 Germany — Bundesagentur für Arbeit open API (works out of the box)
      - 🇫🇷 France — France Travail API (optional; needs free credentials)
      - 🇳🇱 Netherlands, 🇫🇮 Finland, 🇪🇸 Spain — safe placeholders with TODOs
-       (no clean free public API yet; return nothing, never crash)
+       (no clean free national API yet; return nothing, never crash)
+   - **Adzuna** — free multi-country job aggregator (optional key) covering
+     Netherlands, Spain, France, Italy, Poland, Austria
+   - **Cedefop Labour & Skills Shortage Index** — the official EU dataset of
+     shortage occupations by country, parsed into the report's skills section
    - Eurofound European Restructuring Monitor (best-effort, polite)
    - EURES (safe placeholder — see TODOs)
+
+> ℹ️ We deliberately **do not use Indeed**: it forbids scraping in its
+> robots.txt/terms, blocks automated access, and no longer offers a public
+> job-search API. Adzuna is the polite, sanctioned way to get similar breadth.
 2. **Stores** every item in a local **SQLite** database (`data/radar.sqlite`).
 3. **Deduplicates** by URL and content hash.
 4. **Extracts metadata**: signal type, country, keywords.

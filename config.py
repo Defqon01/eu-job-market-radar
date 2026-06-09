@@ -170,6 +170,52 @@ FRANCE_JOBS_API = (
 FRANCE_TRAVAIL_CLIENT_ID = os.getenv("FRANCE_TRAVAIL_CLIENT_ID", "").strip()
 FRANCE_TRAVAIL_CLIENT_SECRET = os.getenv("FRANCE_TRAVAIL_CLIENT_SECRET", "").strip()
 
+# --- Adzuna: free job-search aggregator API covering many EU countries ------
+# One collector (adzuna_jobs.py) covers several countries via this single API.
+# Create free credentials at https://developer.adzuna.com/ and put them in your
+# .env / GitHub secrets. If they are missing, the collector skips safely.
+#
+# Note: Adzuna does NOT cover Sweden or Finland. Sweden keeps its own native
+# Arbetsförmedlingen collector; Germany already has a native collector, so it
+# is left out of the Adzuna list below to avoid double-counting.
+ADZUNA_API = "https://api.adzuna.com/v1/api/jobs/{country}/search/1"
+ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID", "").strip()
+ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY", "").strip()
+# Adzuna 2-letter country code -> display name used in our reports.
+ADZUNA_COUNTRIES = {
+    "nl": "Netherlands",
+    "es": "Spain",
+    "fr": "France",
+    "it": "Italy",
+    "pl": "Poland",
+    "at": "Austria",
+}
+
+# ---------------------------------------------------------------------------
+# Cedefop Labour and Skills Shortage Index (CLSSI) — the EU skills source.
+# A public Excel dataset of labour/skills shortage scores (1=low .. 4=severe)
+# by occupation group, with one sheet per country plus an EU27 sheet.
+#   page:    https://www.cedefop.europa.eu/en/datasets/labour-skills-shortage-index
+# The report downloads and parses this to show real shortage occupations.
+# ---------------------------------------------------------------------------
+CEDEFOP_CLSSI_URL = (
+    "https://www.cedefop.europa.eu/files/"
+    "2024_cedefop_labour_skills_shortage_index_clssi_dataset.xlsx"
+)
+# Map our country names to the CLSSI sheet codes we want to feature, plus EU27.
+CEDEFOP_FEATURED = {
+    "EU27": "EU27",
+    "Sweden": "SE",
+    "Germany": "DE",
+    "Netherlands": "NL",
+    "France": "FR",
+    "Spain": "ES",
+    "Italy": "IT",
+    "Finland": "FI",
+}
+# Only occupations at or above this index count as a real shortage (1..4 scale).
+CEDEFOP_SHORTAGE_THRESHOLD = 3.0
+
 # ---------------------------------------------------------------------------
 # Classification keywords (lower-cased matching).
 # Order matters: the classifier checks job_posting hints, then the categories

@@ -27,6 +27,7 @@ from datetime import date
 import config
 from radar import db
 from radar.collectors import (
+    adzuna_jobs,
     company_news_collector,
     eures_collector,
     eurofound_collector,
@@ -56,6 +57,7 @@ COLLECTORS = [
     ("Netherlands jobs", netherlands_jobs.collect),
     ("Finland jobs", finland_jobs.collect),
     ("Spain jobs", spain_jobs.collect),
+    ("Adzuna (multi-country jobs)", adzuna_jobs.collect),
     ("Eurofound ERM", eurofound_collector.collect),
     ("EURES", eures_collector.collect),
 ]
