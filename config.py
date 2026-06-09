@@ -10,6 +10,7 @@ are loaded from a local ".env" file via python-dotenv.
 """
 
 import os
+import re
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -217,10 +218,32 @@ def get_llm_model() -> str:
 # ---------------------------------------------------------------------------
 # Email settings
 # ---------------------------------------------------------------------------
+def _clean_credential(value: str) -> str:
+    """
+    Remove ALL whitespace (including non-breaking spaces, U+00A0) from a
+    credential.
+
+    Why: Gmail shows App Passwords grouped as "abcd efgh ijkl mnop", but the
+    real password is 16 characters with no spaces. Copy-pasting often brings
+    along regular or non-breaking spaces. A non-breaking space cannot even be
+    ASCII-encoded for SMTP AUTH and would crash the login. SMTP usernames and
+    app passwords never legitimately contain whitespace, so stripping it is
+    safe and makes the project forgiving of this very common mistake.
+    """
+    cleaned = re.sub(r"\s+", "", value or "")
+    if cleaned != (value or "").strip():
+        # Don't log the secret itself — just that we cleaned it.
+        print(
+            "[config] Note: removed stray whitespace from an SMTP credential "
+            "(e.g. spaces pasted from a Gmail App Password)."
+        )
+    return cleaned
+
+
 SMTP_HOST = os.getenv("SMTP_HOST", "").strip()
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587") or "587")
-SMTP_USER = os.getenv("SMTP_USER", "").strip()
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").strip()
+SMTP_USER = _clean_credential(os.getenv("SMTP_USER", ""))
+SMTP_PASSWORD = _clean_credential(os.getenv("SMTP_PASSWORD", ""))
 EMAIL_FROM = os.getenv("EMAIL_FROM", "").strip()
 EMAIL_TO = os.getenv("EMAIL_TO", "").strip()
 
