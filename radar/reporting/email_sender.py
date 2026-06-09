@@ -62,8 +62,17 @@ def send_report(report_markdown: str, report_date: str) -> bool:
     msg["Subject"] = subject
     msg["From"] = config.EMAIL_FROM
     msg["To"] = config.EMAIL_TO
-    msg.set_content(report_markdown)  # plain-text part (the markdown itself)
-    msg.add_alternative(_markdown_to_basic_html(report_markdown), subtype="html")
+    # Force quoted-printable + utf-8 so non-ASCII characters (em dashes,
+    # emoji, the non-breaking spaces that often appear in scraped news
+    # titles) survive even if the SMTP server does not advertise 8BITMIME
+    # and the message gets re-encoded as 7-bit on the wire.
+    msg.set_content(report_markdown, subtype="plain", charset="utf-8", cte="quoted-printable")
+    msg.add_alternative(
+        _markdown_to_basic_html(report_markdown),
+        subtype="html",
+        charset="utf-8",
+        cte="quoted-printable",
+    )
 
     try:
         logger.info(
@@ -81,5 +90,7 @@ def send_report(report_markdown: str, report_date: str) -> bool:
         logger.info("Report emailed to %s", config.EMAIL_TO)
         return True
     except Exception as exc:
-        logger.error("Failed to send email: %s", exc)
+        # Log the full traceback so SMTP/encoding issues are diagnosable
+        # from the GitHub Actions logs, not just the one-line message.
+        logger.exception("Failed to send email: %s", exc)
         return False
