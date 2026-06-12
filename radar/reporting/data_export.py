@@ -26,7 +26,14 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter, defaultdict
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
+
+
+def _period_label(days: int) -> str:
+    """Human-friendly week range, e.g. 'Week of Jun 6–12, 2026'."""
+    end = date.today()
+    start = end - timedelta(days=days - 1)
+    return f"Week of {start.strftime('%b %d').lstrip('0')}–{end.strftime('%b %d, %Y').lstrip('0')}"
 
 import config
 from radar.db import get_recent_items
@@ -113,6 +120,23 @@ def _cluster_layoff_events(items: list[dict]) -> list[dict]:
             if not c["company"] and company:
                 c["company"] = company
     return list(clusters.values())
+
+
+def _resolve_event_url(ev: dict, items: list[dict]) -> str | None:
+    """Find a real collected article URL for an LLM event (match company/title)."""
+    company = (ev.get("company") or "").lower().strip()
+    title_words = set(re.findall(r"\w+", (ev.get("title") or "").lower())[:6])
+    fallback = None
+    for i in items:
+        url = i.get("url")
+        if not url:
+            continue
+        t = (i.get("title") or "").lower()
+        if company and len(company) > 2 and company in t:
+            return url
+        if title_words and len(title_words & set(re.findall(r"\w+", t))) >= 4:
+            fallback = url
+    return fallback
 
 
 def _layoff_level(score: float) -> str:
@@ -228,7 +252,7 @@ def build_deterministic(items: list[dict], days: int) -> dict:
 
     return {
         "generated_at": _utcnow_iso(),
-        "period": f"Last {days} days",
+        "period": _period_label(days),
         "summary": summary,
         "countries": countries,
         "top_events": top_events,
@@ -299,7 +323,24 @@ def _haiku_refine(payload: dict, items: list[dict]) -> dict:
     if isinstance(refined.get("summary"), str) and refined["summary"].strip():
         payload["summary"] = refined["summary"].strip()
     if isinstance(refined.get("top_events"), list) and refined["top_events"]:
-        payload["top_events"] = refined["top_events"][:12]
+        # VET SOURCES: every displayed event must link to a real collected
+        # article. Validate each refined event's URL against the items; if the
+        # LLM didn't supply a real one, resolve it by company/title match,
+        # else drop the event so nothing unverifiable reaches readers.
+        valid_urls = {i.get("url") for i in items if i.get("url")}
+        vetted = []
+        for ev in refined["top_events"][:14]:
+            if not isinstance(ev, dict) or not ev.get("title"):
+                continue
+            url = ev.get("url")
+            if url not in valid_urls:
+                url = _resolve_event_url(ev, items)
+            if not url:
+                continue
+            ev["url"] = url
+            vetted.append(ev)
+        if vetted:
+            payload["top_events"] = vetted[:12]
     notes = refined.get("country_notes") or {}
     if isinstance(notes, dict):
         for c in payload["countries"]:
