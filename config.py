@@ -229,6 +229,31 @@ CEDEFOP_FEATURED = {
 CEDEFOP_SHORTAGE_THRESHOLD = 3.0
 
 # ---------------------------------------------------------------------------
+# GDELT — global news-event database (free, no key, fully sanctioned for
+# programmatic use). It is TRANSLINGUAL: querying English layoff terms also
+# matches LOCAL-LANGUAGE articles per country (e.g. German "Entlassungen"),
+# giving far broader European coverage than English-only Google News.
+#   docs: https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/
+# ---------------------------------------------------------------------------
+GDELT_API = "https://api.gdeltproject.org/api/v2/doc/doc"
+GDELT_QUERY = "layoffs"            # single robust term; translingual broadens it
+GDELT_TIMESPAN = "14d"
+GDELT_LIMIT_PER_COUNTRY = 25
+# FIPS 10-4 country codes (used by GDELT 'sourcecountry') -> our display names.
+GDELT_COUNTRIES = {
+    "GM": "Germany", "FR": "France", "IT": "Italy", "SP": "Spain",
+    "SW": "Sweden", "NL": "Netherlands", "DA": "Denmark", "NO": "Norway",
+    "FI": "Finland", "PL": "Poland", "BE": "Belgium", "AU": "Austria",
+    "SZ": "Switzerland", "EI": "Ireland", "PO": "Portugal", "GR": "Greece",
+}
+
+# ---------------------------------------------------------------------------
+# Arbeitnow — free, public, no-key job-board API (Europe-focused, many German
+# and EU listings). https://www.arbeitnow.com/api/job-board-api
+# ---------------------------------------------------------------------------
+ARBEITNOW_API = "https://www.arbeitnow.com/api/job-board-api"
+
+# ---------------------------------------------------------------------------
 # Classification keywords (lower-cased matching).
 # Order matters: the classifier checks job_posting hints, then the categories
 # below in this dictionary order.

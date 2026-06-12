@@ -28,11 +28,13 @@ import config
 from radar import db
 from radar.collectors import (
     adzuna_jobs,
+    arbeitnow_collector,
     company_news_collector,
     eures_collector,
     eurofound_collector,
     finland_jobs,
     france_jobs,
+    gdelt_collector,
     germany_jobs,
     netherlands_jobs,
     rss_collector,
@@ -50,8 +52,10 @@ logger = get_logger("main")
 # The collectors to run, in order. Each must expose a `collect() -> list[Item]`.
 COLLECTORS = [
     ("RSS / Google News", rss_collector.collect),
+    ("GDELT news (multilingual)", gdelt_collector.collect),
     ("Company news", company_news_collector.collect),
     ("Sweden jobs", sweden_jobs.collect),
+    ("Arbeitnow jobs", arbeitnow_collector.collect),
     ("Germany jobs", germany_jobs.collect),
     ("France jobs", france_jobs.collect),
     ("Netherlands jobs", netherlands_jobs.collect),
