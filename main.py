@@ -42,7 +42,7 @@ from radar.collectors import (
 from radar.models import Item
 from radar.processing import dedupe
 from radar.processing.classifier import enrich_item
-from radar.reporting import email_sender, report_generator
+from radar.reporting import data_export, email_sender, report_generator
 from radar.utils.logging import get_logger
 
 logger = get_logger("main")
@@ -136,6 +136,11 @@ def parse_args() -> argparse.Namespace:
         help="Force sending the report by email (requires SMTP settings).",
     )
     parser.add_argument(
+        "--export-json",
+        action="store_true",
+        help="Generate the website's docs/data.json from stored items; skip email.",
+    )
+    parser.add_argument(
         "--days",
         type=int,
         default=7,
@@ -149,6 +154,17 @@ def main() -> None:
 
     logger.info("EU Job Market Radar starting (provider=%s)", config.LLM_PROVIDER)
     db.init_db()
+
+    # Export-only: build data.json from already-stored items and stop.
+    if args.export_json and args.report_only:
+        data_export.export(days=args.days)
+        return
+    if args.export_json:
+        # Collect fresh items first (unless report-only), then export.
+        collect_and_store()
+        data_export.export(days=args.days)
+        logger.info("Done (data.json exported).")
+        return
 
     if args.report_only:
         build_and_maybe_send_report(days=args.days, force_send=args.send_email)

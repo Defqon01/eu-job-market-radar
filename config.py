@@ -24,11 +24,23 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 REPORTS_DIR = BASE_DIR / "reports"
+DOCS_DIR = BASE_DIR / "docs"
 DB_PATH = DATA_DIR / "radar.sqlite"
+# The daily public snapshot consumed by the website (committed/pushed to the site).
+DATA_JSON_PATH = DOCS_DIR / "data.json"
 
 # Make sure the folders exist (cheap and safe to call on every run).
 DATA_DIR.mkdir(exist_ok=True)
 REPORTS_DIR.mkdir(exist_ok=True)
+DOCS_DIR.mkdir(exist_ok=True)
+
+# ISO-2 country codes for the website (flags / labels).
+COUNTRY_CODES = {
+    "Sweden": "SE", "Denmark": "DK", "Norway": "NO", "Finland": "FI",
+    "Germany": "DE", "Netherlands": "NL", "France": "FR", "Italy": "IT",
+    "Spain": "ES", "Poland": "PL", "Ireland": "IE", "Belgium": "BE",
+    "Austria": "AT", "Switzerland": "CH", "EU": "EU", "Europe": "EU",
+}
 
 # ---------------------------------------------------------------------------
 # HTTP / politeness settings
