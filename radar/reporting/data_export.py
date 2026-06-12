@@ -122,20 +122,19 @@ def _cluster_layoff_events(items: list[dict]) -> list[dict]:
     return list(clusters.values())
 
 
-def _resolve_event_url(ev: dict, items: list[dict]) -> str | None:
-    """Find a real collected article URL for an LLM event (match company/title)."""
+def _resolve_event_item(ev: dict, items: list[dict]) -> dict | None:
+    """Find the real collected article for an LLM event (match company/title)."""
     company = (ev.get("company") or "").lower().strip()
     title_words = set(re.findall(r"\w+", (ev.get("title") or "").lower())[:6])
     fallback = None
     for i in items:
-        url = i.get("url")
-        if not url:
+        if not i.get("url"):
             continue
         t = (i.get("title") or "").lower()
         if company and len(company) > 2 and company in t:
-            return url
+            return i
         if title_words and len(title_words & set(re.findall(r"\w+", t))) >= 4:
-            fallback = url
+            fallback = i
     return fallback
 
 
@@ -327,17 +326,20 @@ def _haiku_refine(payload: dict, items: list[dict]) -> dict:
         # article. Validate each refined event's URL against the items; if the
         # LLM didn't supply a real one, resolve it by company/title match,
         # else drop the event so nothing unverifiable reaches readers.
-        valid_urls = {i.get("url") for i in items if i.get("url")}
+        url_to_item = {i["url"]: i for i in items if i.get("url")}
         vetted = []
         for ev in refined["top_events"][:14]:
             if not isinstance(ev, dict) or not ev.get("title"):
                 continue
-            url = ev.get("url")
-            if url not in valid_urls:
-                url = _resolve_event_url(ev, items)
-            if not url:
+            match = url_to_item.get(ev.get("url")) or _resolve_event_item(ev, items)
+            if not match:
                 continue
-            ev["url"] = url
+            # Source the URL AND the date from the real article — the LLM does
+            # not know real publication dates (it was hallucinating 2026-01-01).
+            ev["url"] = match["url"]
+            real_date = (match.get("published_at") or match.get("collected_at") or "")[:10]
+            if real_date:
+                ev["date"] = real_date
             vetted.append(ev)
         if vetted:
             payload["top_events"] = vetted[:12]
